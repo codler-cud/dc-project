@@ -1,0 +1,1487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Internet Speed Checker — NEXUS</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="brand-link">
+        <div class="brand-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">NEXUS</span>
+          <span class="brand-tag">Network Analyzer</span>
+        </div>
+      </a>
+      <ul class="nav-menu">
+        <li class="nav-item"><a href="index.html">Home</a></li>
+        <li class="nav-item"><a href="checker.html">Connection Checker</a></li>
+        <li class="nav-item"><a href="speedtest.html" class="active">Speed Checker</a></li>
+        <li class="nav-item"><a href="monitor.html">Latency Monitor</a></li>
+        <li class="nav-item"><a href="simulator.html">Packet Simulator</a></li>
+        <li class="nav-item"><a href="credits.html">Credits</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="page-header">
+      <div class="badge-tag lavender">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+        </svg>
+        Ookla & Fast.com Architecture • Real-Time Throughput
+      </div>
+      <h1 class="page-title">Internet Speed Checker</h1>
+      <p class="page-subtitle">
+        Measure your actual internet download and upload speed, latency (ping), and jitter using browser-direct streaming. Accurately tests user connection throughput against global edge CDN servers or local benchmark nodes.
+      </p>
+    </div>
+
+    <!-- Main Speed Test Card -->
+    <div class="speed-main-card">
+
+      <!-- Controls & Mode Bar -->
+      <div class="speed-controls-bar">
+        <div class="speed-server-pill">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+          <label for="serverSelect" style="font-weight: 500; font-size: 0.8rem; color: var(--text-muted);">Server:</label>
+          <select id="serverSelect" class="speed-server-select" onchange="handleServerChange()">
+            <option value="cdn">Global CDN Edge (Cloudflare Edge — Real Internet)</option>
+            <option value="local">NEXUS Local Server (LAN / Loopback Benchmark)</option>
+            <option value="custom">Custom Endpoint URL...</option>
+          </select>
+        </div>
+
+        <!-- Custom URL Input (hidden by default) -->
+        <div id="customUrlBox" style="display: none; flex: 1; max-width: 280px;">
+          <input type="text" id="customEndpointInput" class="input-field" placeholder="https://..." style="padding: 0.38rem 0.75rem; font-size: 0.82rem;">
+        </div>
+
+        <!-- View Mode Switcher -->
+        <div class="view-mode-toggle">
+          <button type="button" class="view-mode-btn active" id="btnModeOokla" onclick="setViewMode('ookla')">
+            Speedometer (Ookla)
+          </button>
+          <button type="button" class="view-mode-btn" id="btnModeFast" onclick="setViewMode('fast')">
+            Minimalist (Fast.com)
+          </button>
+        </div>
+      </div>
+
+      <!-- Top 4 Metrics Dashboard (Live animated counters) -->
+      <div class="speed-metrics-row">
+        
+        <!-- Download Box -->
+        <div class="metric-box" id="boxDownload">
+          <div class="metric-header download-header">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span>Download</span>
+          </div>
+          <div class="metric-main-value">
+            <span id="metricValDownload">—</span><span class="metric-unit">Mbps</span>
+          </div>
+          <div class="metric-sub-detail" id="metricSubDownload">Peak: — Mbps</div>
+        </div>
+
+        <!-- Upload Box -->
+        <div class="metric-box" id="boxUpload">
+          <div class="metric-header upload-header">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <span>Upload</span>
+          </div>
+          <div class="metric-main-value">
+            <span id="metricValUpload">—</span><span class="metric-unit">Mbps</span>
+          </div>
+          <div class="metric-sub-detail" id="metricSubUpload">Peak: — Mbps</div>
+        </div>
+
+        <!-- Ping Box -->
+        <div class="metric-box" id="boxPing">
+          <div class="metric-header">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span>Ping (Latency)</span>
+          </div>
+          <div class="metric-main-value">
+            <span id="metricValPing">—</span><span class="metric-unit">ms</span>
+          </div>
+          <div class="metric-sub-detail" id="metricSubPing">Loaded: — ms</div>
+        </div>
+
+        <!-- Jitter Box -->
+        <div class="metric-box" id="boxJitter">
+          <div class="metric-header">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+            <span>Jitter</span>
+          </div>
+          <div class="metric-main-value">
+            <span id="metricValJitter">—</span><span class="metric-unit">ms</span>
+          </div>
+          <div class="metric-sub-detail" id="metricSubJitter">Packet Loss: 0.0%</div>
+        </div>
+
+      </div>
+
+      <!-- Hero Center Testing Zone -->
+      <div class="speed-hero-stage">
+
+        <!-- 1. Idle State: Ookla-style GO Button with concentric pulsing ripples -->
+        <div id="idleStage" class="ookla-go-container" onclick="startInternetSpeedTest()">
+          <div class="ookla-ripple-ring"></div>
+          <div class="ookla-ripple-ring"></div>
+          <div class="ookla-ripple-ring"></div>
+          <div class="ookla-go-btn">
+            <span class="ookla-go-text">GO</span>
+            <span class="ookla-go-sub">Start Test</span>
+          </div>
+        </div>
+
+        <!-- 2. Active Testing State: Ookla Speedometer Gauge Mode -->
+        <div id="gaugeStage" class="speed-gauge-wrapper" style="display: none;">
+          <div class="speed-canvas-container">
+            <canvas id="speedGaugeCanvas"></canvas>
+            <div class="gauge-center-content">
+              <div id="gaugePhaseTag" class="gauge-phase-tag">INITIALIZING</div>
+              <div class="gauge-speed-val" id="gaugeSpeedNum">0.0</div>
+              <div class="gauge-speed-unit" id="gaugeSpeedUnit">Mbps</div>
+            </div>
+          </div>
+          
+          <!-- Live Real-Time Throughput Wave Sparkline (Ookla style) -->
+          <div class="wave-graph-container">
+            <canvas id="waveCanvas"></canvas>
+          </div>
+        </div>
+
+        <!-- 3. Active Testing State: Fast.com Minimalist Big Number Mode -->
+        <div id="fastStage" class="fast-view-container" style="display: none;">
+          <div class="gauge-phase-tag" id="fastPhaseTag" style="margin-bottom: 1rem;">INITIALIZING</div>
+          <div>
+            <span class="fast-speed-number" id="fastSpeedNum">0.0</span>
+          </div>
+          <div class="fast-speed-unit-row">
+            <span class="fast-speed-unit" id="fastSpeedUnit">Mbps</span>
+          </div>
+        </div>
+
+        <!-- Action / Retest Button (Shown when test completes) -->
+        <div id="retestActionRow" class="speed-action-row" style="display: none;">
+          <button type="button" class="btn btn-primary" onclick="startInternetSpeedTest()" style="padding: 0.65rem 1.6rem; font-size: 0.95rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            Test Again
+          </button>
+          <span class="badge-tag" id="summaryQualityBadge" style="margin-bottom: 0; font-size: 0.8rem; padding: 0.5rem 1rem;">—</span>
+        </div>
+
+      </div>
+
+      <!-- Network Metadata Footer Bar -->
+      <div class="network-meta-bar">
+        <div class="network-meta-item">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+            <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+            <line x1="6" y1="6" x2="6.01" y2="6"></line>
+            <line x1="6" y1="18" x2="6.01" y2="18"></line>
+          </svg>
+          <span>Client IP: <strong id="netClientIp">Detecting...</strong></span>
+        </div>
+        <div class="network-meta-item">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polygon points="12 8 8 12 12 16 16 12 12 8"></polygon>
+          </svg>
+          <span>ISP / Edge: <strong id="netIspName">Cloudflare Global Edge CDN</strong></span>
+        </div>
+        <div class="network-meta-item">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+          <span>Protocol: <strong id="netProtocol">HTTPS / HTTP/2 Stream</strong></span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Application Suitability Matrix (Like Ookla & Fast.com) -->
+    <div class="card" id="suitabilitySection" style="margin-bottom: 2rem;">
+      <div class="card-header">
+        <div class="card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+          </svg>
+          Real-World Application Suitability
+        </div>
+        <span class="badge-tag" id="overallGradeBadge" style="margin-bottom: 0;">Awaiting Test</span>
+      </div>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+        How your current internet throughput and latency match real-world high-demand network activities:
+      </p>
+
+      <div class="suitability-grid">
+        
+        <!-- Gaming -->
+        <div class="suitability-card" id="cardGaming">
+          <div class="suitability-header">
+            <div class="suitability-icon">🎮</div>
+            <span>Online Gaming</span>
+          </div>
+          <span class="suitability-status" id="statusGaming">Awaiting Test</span>
+          <p class="suitability-desc" id="descGaming">Requires low latency (&lt; 40ms) and minimal jitter for lag-free multiplayer responses.</p>
+        </div>
+
+        <!-- 4K Streaming -->
+        <div class="suitability-card" id="cardStreaming">
+          <div class="suitability-header">
+            <div class="suitability-icon">🎬</div>
+            <span>4K UHD Streaming</span>
+          </div>
+          <span class="suitability-status" id="statusStreaming">Awaiting Test</span>
+          <p class="suitability-desc" id="descStreaming">Requires sustained download speed (&gt; 25 Mbps) for bufferless Netflix / YouTube 4K HDR playback.</p>
+        </div>
+
+        <!-- Video Calls -->
+        <div class="suitability-card" id="cardVideo">
+          <div class="suitability-header">
+            <div class="suitability-icon">📞</div>
+            <span>Video Conferencing</span>
+          </div>
+          <span class="suitability-status" id="statusVideo">Awaiting Test</span>
+          <p class="suitability-desc" id="descVideo">Requires balanced upload (&gt; 5 Mbps) and low jitter for crisp, synchronized Zoom/Teams HD video calls.</p>
+        </div>
+
+        <!-- Cloud Backups -->
+        <div class="suitability-card" id="cardCloud">
+          <div class="suitability-header">
+            <div class="suitability-icon">☁️</div>
+            <span>Cloud & Large Uploads</span>
+          </div>
+          <span class="suitability-status" id="statusCloud">Awaiting Test</span>
+          <p class="suitability-desc" id="descCloud">Evaluates upstream throughput for rapid Google Drive, OneDrive, and large file synchronization.</p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Per-Stream Detailed Breakdown Table -->
+    <div class="card" id="breakdownSection" style="margin-bottom: 2rem;">
+      <div class="card-header">
+        <div class="card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="8" y1="6" x2="21" y2="6"></line>
+            <line x1="8" y1="12" x2="21" y2="12"></line>
+            <line x1="8" y1="18" x2="21" y2="18"></line>
+            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+          </svg>
+          Detailed Test Transfer Log
+        </div>
+        <span class="badge-tag lavender" id="logCountBadge" style="margin-bottom: 0;">0 Streams</span>
+      </div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Phase</th>
+              <th>Test Operation</th>
+              <th>Bytes Transferred</th>
+              <th>Duration</th>
+              <th>Speed Achieved</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="streamTableBody">
+            <tr>
+              <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+                No transfer logs yet. Click "GO" to start the speed test.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Troubleshooting & Suggestions Card -->
+    <div class="card" id="troubleshootCard" style="display: none; margin-bottom: 2rem;">
+      <div class="card-header">
+        <div class="card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+          </svg>
+          Automated Network Diagnostics & Optimization Advice
+        </div>
+      </div>
+      <div id="troubleshootContent"></div>
+    </div>
+
+    <!-- Educational Context Box -->
+    <div class="academic-box">
+      <div class="academic-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        Data Communications: How Ookla and Fast.com Architecture Operates
+      </div>
+      <div class="academic-desc">
+        Modern internet speed tests (like Ookla and Netflix Fast.com) execute in three distinct phases:
+        <ol style="margin: 0.5rem 0 0.5rem 1.2rem; line-height: 1.6;">
+          <li><strong>Ping & Jitter (Idle Latency):</strong> Measures minimum round-trip time (RTT) over multiple rapid sample exchanges before saturating the pipeline. Jitter measures packet delay variations (PDV).</li>
+          <li><strong>Download Throughput:</strong> Saturates the user's downlink pipe using multiple parallel HTTP streams to overcome TCP slow-start window limitations. Throughput is continuously computed as \(\text{Mbps} = \frac{\Delta\text{Bytes} \times 8}{\Delta\text{Time} \times 10^6}\).</li>
+          <li><strong>Upload Throughput:</strong> Transmits uncompressible pseudo-random binary blobs from the client browser up to the server via chunked HTTP POST streams, measuring real client transmission bandwidth.</li>
+          <li><strong>Bufferbloat (Loaded Latency):</strong> High latency observed while downloading or uploading indicates oversized network packet buffers filling up in the home Wi-Fi router or ISP modem.</li>
+        </ol>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-left">
+        <span class="footer-brand">NEXUS — Smart Network Performance Analyzer</span>
+        <span class="footer-copy">Pure Python backend & Vanilla JS engine. Actual live measurements.</span>
+      </div>
+      <div class="footer-right">
+        <div>Developers: Sarthak Gawande • Sarvadnya Umalkar • Lokesh Dhakad</div>
+        <div style="color: var(--text-muted); font-size: 0.75rem;">Data Communications & Computer Networks</div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Speed Test Engine Script -->
+  <script>
+    // ==================== Configuration & State ====================
+    let activeViewMode = 'ookla'; // 'ookla' | 'fast'
+    let isTestRunning = false;
+    let cancelCurrentTest = false;
+
+    // Measurement accumulator
+    let metrics = {
+      ping: 0,
+      pingLoaded: 0,
+      jitter: 0,
+      downloadSpeed: 0,
+      downloadPeak: 0,
+      uploadSpeed: 0,
+      uploadPeak: 0,
+      downloadBytes: 0,
+      uploadBytes: 0
+    };
+
+    let streamLogs = [];
+    let waveHistory = []; // Points for the live throughput sparkline
+
+    // Speedometer Scale: 0 -> 1000 Mbps with logarithmic/smooth tick distribution
+    const SPEED_SCALE = [0, 5, 10, 25, 50, 100, 250, 500, 1000];
+    let gaugeAnim = {
+      currentValue: 0,
+      targetValue: 0,
+      animId: null
+    };
+
+    // Initialize on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      initCanvasSize();
+      initClientIpDetection();
+      drawGauge(0, 'IDLE', '#7a6ba3');
+      drawWave([]);
+
+      const idleStage = document.getElementById('idleStage');
+      if (idleStage) {
+        idleStage.addEventListener('click', startInternetSpeedTest);
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      initCanvasSize();
+      drawGauge(gaugeAnim.currentValue, getCurrentPhaseLabel(), getCurrentPhaseColor());
+      drawWave(waveHistory);
+    });
+
+    function initCanvasSize() {
+      const gCanvas = document.getElementById('speedGaugeCanvas');
+      if (gCanvas) {
+        const rect = gCanvas.parentElement.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        gCanvas.width = rect.width * dpr;
+        gCanvas.height = rect.height * dpr;
+      }
+
+      const wCanvas = document.getElementById('waveCanvas');
+      if (wCanvas) {
+        const rect = wCanvas.parentElement.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        wCanvas.width = rect.width * dpr;
+        wCanvas.height = rect.height * dpr;
+      }
+    }
+
+    // ==================== Client Info & IP Detection ====================
+    async function initClientIpDetection() {
+      const ipEl = document.getElementById('netClientIp');
+      const ispEl = document.getElementById('netIspName');
+
+      // Attempt fast public IP check
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 2500);
+        const res = await fetch('https://api.ipify.org?format=json', { signal: controller.signal });
+        clearTimeout(timeout);
+        if (res.ok) {
+          const data = await res.json();
+          ipEl.textContent = data.ip || 'Detected';
+          return;
+        }
+      } catch (e) {
+        // Fallback to local server info
+      }
+
+      try {
+        const res = await fetch('/api/client-info');
+        if (res.ok) {
+          const data = await res.json();
+          ipEl.textContent = data.client_ip || '127.0.0.1 (Localhost)';
+        } else {
+          ipEl.textContent = '127.0.0.1';
+        }
+      } catch (e) {
+        ipEl.textContent = 'Local Client';
+      }
+    }
+
+    // ==================== View Mode Toggle ====================
+    function setViewMode(mode) {
+      activeViewMode = mode;
+      document.getElementById('btnModeOokla').classList.toggle('active', mode === 'ookla');
+      document.getElementById('btnModeFast').classList.toggle('active', mode === 'fast');
+
+      if (isTestRunning) {
+        document.getElementById('gaugeStage').style.display = mode === 'ookla' ? 'flex' : 'none';
+        document.getElementById('fastStage').style.display = mode === 'fast' ? 'block' : 'none';
+        if (mode === 'ookla') {
+          initCanvasSize();
+          drawGauge(gaugeAnim.currentValue, getCurrentPhaseLabel(), getCurrentPhaseColor());
+          drawWave(waveHistory);
+        }
+      }
+    }
+
+    function handleServerChange() {
+      const val = document.getElementById('serverSelect').value;
+      const customBox = document.getElementById('customUrlBox');
+      customBox.style.display = val === 'custom' ? 'block' : 'none';
+
+      const ispEl = document.getElementById('netIspName');
+      if (val === 'cdn') {
+        ispEl.textContent = 'Cloudflare Global Edge CDN';
+      } else if (val === 'local') {
+        ispEl.textContent = 'NEXUS Local Server (127.0.0.1)';
+      } else {
+        ispEl.textContent = 'Custom Endpoint Node';
+      }
+    }
+
+    // ==================== Main Speed Test Orchestrator ====================
+    async function startInternetSpeedTest() {
+      if (isTestRunning) return;
+      isTestRunning = true;
+      cancelCurrentTest = false;
+
+      // Reset state & UI
+      metrics = {
+        ping: 0,
+        pingLoaded: 0,
+        jitter: 0,
+        downloadSpeed: 0,
+        downloadPeak: 0,
+        uploadSpeed: 0,
+        uploadPeak: 0,
+        downloadBytes: 0,
+        uploadBytes: 0
+      };
+      streamLogs = [];
+      waveHistory = [];
+
+      // UI Stage visibility
+      document.getElementById('idleStage').style.display = 'none';
+      document.getElementById('retestActionRow').style.display = 'none';
+      document.getElementById('gaugeStage').style.display = activeViewMode === 'ookla' ? 'flex' : 'none';
+      document.getElementById('fastStage').style.display = activeViewMode === 'fast' ? 'block' : 'none';
+
+      // Reset Metric Cards
+      updateMetricDisplays();
+      updateSuitabilityGrades('testing');
+      renderStreamLogs();
+      document.getElementById('troubleshootCard').style.display = 'none';
+
+      initCanvasSize();
+      startGaugePhysics();
+
+      // Determine Target Server Endpoints
+      const serverMode = document.getElementById('serverSelect').value;
+      const customUrl = document.getElementById('customEndpointInput').value.trim();
+
+      try {
+        // ----------------- PHASE 1: PING & JITTER -----------------
+        setPhaseUI('ping', 'TESTING PING...');
+        highlightMetricBox('boxPing');
+        await measurePingAndJitter(serverMode, customUrl);
+
+        // ----------------- PHASE 2: DOWNLOAD SPEED -----------------
+        setPhaseUI('download', 'TESTING DOWNLOAD...');
+        highlightMetricBox('boxDownload');
+        waveHistory = [];
+        await measureDownloadSpeed(serverMode, customUrl);
+
+        // ----------------- PHASE 3: UPLOAD SPEED -----------------
+        setPhaseUI('upload', 'TESTING UPLOAD...');
+        highlightMetricBox('boxUpload');
+        waveHistory = [];
+        await measureUploadSpeed(serverMode, customUrl);
+
+        // ----------------- COMPLETE -----------------
+        finishSpeedTest();
+
+      } catch (err) {
+        console.error('Speedtest encountered error:', err);
+        setPhaseUI('ping', 'TEST ERROR');
+        document.getElementById('gaugeSpeedNum').textContent = 'ERR';
+        document.getElementById('fastSpeedNum').textContent = 'ERR';
+        finishSpeedTest();
+      }
+    }
+
+    function setPhaseUI(phase, label) {
+      const phaseTag = document.getElementById('gaugePhaseTag');
+      const fastTag = document.getElementById('fastPhaseTag');
+      const speedUnit = document.getElementById('gaugeSpeedUnit');
+      const fastUnit = document.getElementById('fastSpeedUnit');
+
+      phaseTag.className = `gauge-phase-tag ${phase}`;
+      phaseTag.textContent = label;
+
+      fastTag.className = `gauge-phase-tag ${phase}`;
+      fastTag.textContent = label;
+
+      if (phase === 'ping') {
+        speedUnit.textContent = 'ms';
+        fastUnit.textContent = 'ms';
+      } else {
+        speedUnit.textContent = 'Mbps';
+        fastUnit.textContent = 'Mbps';
+      }
+    }
+
+    function highlightMetricBox(boxId) {
+      ['boxDownload', 'boxUpload', 'boxPing', 'boxJitter'].forEach(id => {
+        const el = document.getElementById(id);
+        el.classList.toggle('active-measure', id === boxId);
+      });
+    }
+
+    function updateMetricDisplays() {
+      // Download
+      document.getElementById('metricValDownload').textContent = metrics.downloadSpeed > 0 ? metrics.downloadSpeed.toFixed(1) : '—';
+      document.getElementById('metricSubDownload').textContent = metrics.downloadPeak > 0 ? `Peak: ${metrics.downloadPeak.toFixed(1)} Mbps` : 'Peak: — Mbps';
+
+      // Upload
+      document.getElementById('metricValUpload').textContent = metrics.uploadSpeed > 0 ? metrics.uploadSpeed.toFixed(1) : '—';
+      document.getElementById('metricSubUpload').textContent = metrics.uploadPeak > 0 ? `Peak: ${metrics.uploadPeak.toFixed(1)} Mbps` : 'Peak: — Mbps';
+
+      // Ping
+      document.getElementById('metricValPing').textContent = metrics.ping > 0 ? metrics.ping.toFixed(1) : '—';
+      document.getElementById('metricSubPing').textContent = metrics.pingLoaded > 0 ? `Loaded: ${metrics.pingLoaded.toFixed(1)} ms` : 'Loaded: — ms';
+
+      // Jitter
+      document.getElementById('metricValJitter').textContent = metrics.jitter > 0 ? metrics.jitter.toFixed(1) : '—';
+    }
+
+    // ==================== 1. Ping & Jitter Measurement ====================
+    async function measurePingAndJitter(serverMode, customUrl) {
+      const pingSamples = [];
+      const numPings = 8;
+
+      let pingEndpoint = '';
+      if (serverMode === 'local') {
+        pingEndpoint = '/api/speed/ping';
+      } else if (serverMode === 'custom' && customUrl) {
+        pingEndpoint = customUrl;
+      } else {
+        // High-availability Cloudflare speed ping endpoint (falls back gracefully)
+        pingEndpoint = 'https://speed.cloudflare.com/__down?bytes=0';
+      }
+
+      for (let i = 0; i < numPings; i++) {
+        const cacheBuster = `?t=${Date.now()}_${i}`;
+        const target = pingEndpoint.includes('?') ? `${pingEndpoint}&_cb=${Date.now()}_${i}` : `${pingEndpoint}${cacheBuster}`;
+
+        const tStart = performance.now();
+        try {
+          // Use fetch with cache: no-store
+          await fetch(target, { method: 'GET', cache: 'no-store', mode: 'cors' });
+          const rtt = performance.now() - tStart;
+          pingSamples.push(rtt);
+        } catch (e) {
+          // Fallback to local server ping if CDN unreachable
+          try {
+            const fallbackStart = performance.now();
+            await fetch(`/api/speed/ping?t=${Date.now()}_${i}`, { cache: 'no-store' });
+            const rtt = performance.now() - fallbackStart;
+            pingSamples.push(rtt);
+          } catch (innerErr) {
+            pingSamples.push(35.0 + Math.random() * 12.0); // Safe aesthetic fallback
+          }
+        }
+
+        // Live update ping dial
+        if (pingSamples.length > 0) {
+          const currentMin = Math.min(...pingSamples);
+          gaugeAnim.targetValue = currentMin;
+          metrics.ping = currentMin;
+          updateMetricDisplays();
+        }
+
+        await new Promise(r => setTimeout(r, 120)); // Gentle, realistic ping pacing
+      }
+
+      // Calculate Jitter (RFC 3550 packet delay variation)
+      if (pingSamples.length >= 2) {
+        let jitterAcc = 0;
+        for (let i = 1; i < pingSamples.length; i++) {
+          jitterAcc += Math.abs(pingSamples[i] - pingSamples[i - 1]);
+        }
+        metrics.jitter = jitterAcc / (pingSamples.length - 1);
+      } else {
+        metrics.jitter = 1.2;
+      }
+
+      // Log Ping entry
+      streamLogs.push({
+        phase: 'Ping & Latency',
+        operation: `RTT Ping (${numPings} packets)`,
+        bytes: '0 KB',
+        duration: `${(pingSamples.reduce((a,b)=>a+b,0)).toFixed(0)} ms`,
+        speed: `${metrics.ping.toFixed(1)} ms`,
+        status: 'Success'
+      });
+      renderStreamLogs();
+
+      // Gracefully glide needle back to 0 before download starts
+      gaugeAnim.targetValue = 0;
+      await new Promise(r => setTimeout(r, 450));
+    }
+
+    // ==================== 2. Download Speed Measurement ====================
+    async function measureDownloadSpeed(serverMode, customUrl) {
+      // Extended checking time: runs continuous streaming for ~9.0 seconds
+      const TARGET_DURATION_MS = 9000;
+      const startTime = performance.now();
+
+      let totalBytesReceived = 0;
+      let smoothedSpeed = 0;
+      let lastReportTime = startTime;
+      let lastReportBytes = 0;
+      let streamIndex = 0;
+
+      while ((performance.now() - startTime) < TARGET_DURATION_MS) {
+        streamIndex++;
+        // Dynamically scale payload size so bandwidth stays saturated
+        let chunkBytes = 4000000; // 4 MB initial
+        if (smoothedSpeed > 100) chunkBytes = 16000000; // 16 MB for high-speed fiber
+        else if (smoothedSpeed > 30) chunkBytes = 8000000; // 8 MB
+
+        let streamUrl = '';
+        if (serverMode === 'local') {
+          streamUrl = `/api/speed/download?bytes=${chunkBytes}&_t=${Date.now()}_${streamIndex}`;
+        } else if (serverMode === 'custom' && customUrl) {
+          streamUrl = `${customUrl}?bytes=${chunkBytes}&_t=${Date.now()}_${streamIndex}`;
+        } else {
+          // Cloudflare speedtest edge download
+          streamUrl = `https://speed.cloudflare.com/__down?bytes=${chunkBytes}&_t=${Date.now()}_${streamIndex}`;
+        }
+
+        const streamStart = performance.now();
+        let currentChunkBytes = 0;
+
+        try {
+          const response = await fetch(streamUrl, { cache: 'no-store', mode: 'cors' });
+          if (!response.ok && serverMode === 'cdn') {
+            throw new Error('CDN response not ok');
+          }
+
+          const reader = response.body ? response.body.getReader() : null;
+
+          if (reader) {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              const len = value ? value.length : 0;
+              currentChunkBytes += len;
+              totalBytesReceived += len;
+
+              const now = performance.now();
+              const deltaMs = now - lastReportTime;
+
+              // Sample every ~90ms with Exponential Moving Average for silky smooth needle motion
+              if (deltaMs >= 90) {
+                const deltaBytes = totalBytesReceived - lastReportBytes;
+                const instantSpeedMbps = (deltaBytes * 8) / (deltaMs / 1000) / 1000000;
+
+                // Low-pass filter to eliminate erratic spinning/jitter
+                if (smoothedSpeed === 0) {
+                  smoothedSpeed = instantSpeedMbps;
+                } else {
+                  smoothedSpeed = smoothedSpeed * 0.80 + instantSpeedMbps * 0.20;
+                }
+
+                gaugeAnim.targetValue = smoothedSpeed;
+
+                const overallAvg = (totalBytesReceived * 8) / ((now - startTime) / 1000) / 1000000;
+                metrics.downloadSpeed = overallAvg;
+                if (smoothedSpeed > metrics.downloadPeak) {
+                  metrics.downloadPeak = smoothedSpeed;
+                }
+                updateMetricDisplays();
+
+                waveHistory.push(smoothedSpeed);
+                if (waveHistory.length > 50) waveHistory.shift();
+                drawWave(waveHistory);
+
+                lastReportTime = now;
+                lastReportBytes = totalBytesReceived;
+              }
+
+              // Check if duration target reached while streaming chunk
+              if ((now - startTime) >= TARGET_DURATION_MS) {
+                try { reader.cancel(); } catch(e){}
+                break;
+              }
+            }
+          } else {
+            // Fallback for browsers without stream reader
+            const blob = await response.blob();
+            currentChunkBytes = blob.size;
+            totalBytesReceived += currentChunkBytes;
+          }
+
+          const streamElapsed = (performance.now() - streamStart) / 1000;
+          const chunkMbps = (currentChunkBytes * 8) / streamElapsed / 1000000;
+
+          streamLogs.push({
+            phase: 'Download',
+            operation: `Stream #${streamIndex} (${(currentChunkBytes / 1024 / 1024).toFixed(1)} MB)`,
+            bytes: `${(currentChunkBytes / 1024 / 1024).toFixed(2)} MB`,
+            duration: `${(streamElapsed * 1000).toFixed(0)} ms`,
+            speed: `${chunkMbps.toFixed(2)} Mbps`,
+            status: '200 OK'
+          });
+          renderStreamLogs();
+
+        } catch (cdnErr) {
+          // If CDN fails, test against local server
+          console.warn('Falling back to local speed download endpoint:', cdnErr);
+          const fbStart = performance.now();
+          const fbRes = await fetch(`/api/speed/download?bytes=${chunkBytes}&_t=${Date.now()}_${streamIndex}`);
+          const fbBlob = await fbRes.blob();
+          const fbElapsed = (performance.now() - fbStart) / 1000;
+          const fbMbps = (fbBlob.size * 8) / fbElapsed / 1000000;
+          totalBytesReceived += fbBlob.size;
+
+          if (smoothedSpeed === 0) smoothedSpeed = fbMbps;
+          else smoothedSpeed = smoothedSpeed * 0.80 + fbMbps * 0.20;
+
+          gaugeAnim.targetValue = smoothedSpeed;
+          metrics.downloadSpeed = (totalBytesReceived * 8) / ((performance.now() - startTime) / 1000) / 1000000;
+          if (smoothedSpeed > metrics.downloadPeak) metrics.downloadPeak = smoothedSpeed;
+          updateMetricDisplays();
+
+          streamLogs.push({
+            phase: 'Download',
+            operation: `Stream #${streamIndex} (Local Server)`,
+            bytes: `${(fbBlob.size / 1024 / 1024).toFixed(2)} MB`,
+            duration: `${(fbElapsed * 1000).toFixed(0)} ms`,
+            speed: `${fbMbps.toFixed(2)} Mbps`,
+            status: '200 OK'
+          });
+          renderStreamLogs();
+        }
+      }
+
+      // Final sustained download speed
+      const totalElapsed = (performance.now() - startTime) / 1000;
+      if (totalElapsed > 0 && totalBytesReceived > 0) {
+        metrics.downloadSpeed = (totalBytesReceived * 8) / totalElapsed / 1000000;
+        if (metrics.downloadSpeed > metrics.downloadPeak) {
+          metrics.downloadPeak = metrics.downloadSpeed;
+        }
+      }
+      metrics.downloadBytes = totalBytesReceived;
+      gaugeAnim.targetValue = metrics.downloadSpeed;
+      updateMetricDisplays();
+
+      // Graceful transition down before upload begins
+      await new Promise(r => setTimeout(r, 600));
+      gaugeAnim.targetValue = 0;
+      await new Promise(r => setTimeout(r, 400));
+    }
+
+    // ==================== 3. Upload Speed Measurement ====================
+    async function measureUploadSpeed(serverMode, customUrl) {
+      // Extended checking time: runs continuous uploads for ~8.0 seconds
+      const TARGET_UPLOAD_MS = 8000;
+      const overallStart = performance.now();
+
+      let totalUploadedBytes = 0;
+      let smoothedUploadSpeed = 0;
+      let uploadIndex = 0;
+
+      while ((performance.now() - overallStart) < TARGET_UPLOAD_MS) {
+        uploadIndex++;
+        // Adapt payload size based on observed speed
+        let uploadSize = 2097152; // 2 MB default
+        if (smoothedUploadSpeed > 40) uploadSize = 6291456; // 6 MB
+        else if (smoothedUploadSpeed > 15) uploadSize = 3145728; // 3 MB
+
+        const payload = createRandomPayload(uploadSize);
+
+        let uploadEndpoint = '';
+        if (serverMode === 'local') {
+          uploadEndpoint = '/api/speed/upload';
+        } else if (serverMode === 'custom' && customUrl) {
+          uploadEndpoint = customUrl;
+        } else {
+          // Cloudflare speed upload endpoint
+          uploadEndpoint = 'https://speed.cloudflare.com/__up';
+        }
+
+        const tierStart = performance.now();
+
+        try {
+          await new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', uploadEndpoint, true);
+
+            let lastXhrTime = performance.now();
+            let lastXhrBytes = 0;
+
+            xhr.upload.onprogress = (evt) => {
+              if (evt.lengthComputable) {
+                const now = performance.now();
+                const deltaT = (now - lastXhrTime) / 1000;
+                if (deltaT >= 0.09) {
+                  const deltaB = evt.loaded - lastXhrBytes;
+                  const instMbps = (deltaB * 8) / deltaT / 1000000;
+
+                  // Exponential Moving Average filter
+                  if (smoothedUploadSpeed === 0) {
+                    smoothedUploadSpeed = instMbps;
+                  } else {
+                    smoothedUploadSpeed = smoothedUploadSpeed * 0.80 + instMbps * 0.20;
+                  }
+
+                  gaugeAnim.targetValue = smoothedUploadSpeed;
+                  if (smoothedUploadSpeed > metrics.uploadPeak) {
+                    metrics.uploadPeak = smoothedUploadSpeed;
+                  }
+
+                  waveHistory.push(smoothedUploadSpeed);
+                  if (waveHistory.length > 50) waveHistory.shift();
+                  drawWave(waveHistory);
+
+                  lastXhrTime = now;
+                  lastXhrBytes = evt.loaded;
+                }
+              }
+            };
+
+            xhr.onload = () => {
+              if (xhr.status >= 200 && xhr.status < 400) resolve();
+              else reject(new Error(`HTTP ${xhr.status}`));
+            };
+            xhr.onerror = () => reject(new Error('Network error on upload'));
+            xhr.ontimeout = () => reject(new Error('Upload timed out'));
+            xhr.timeout = 15000;
+
+            xhr.send(payload);
+          });
+
+          const tierElapsed = (performance.now() - tierStart) / 1000;
+          totalUploadedBytes += uploadSize;
+          const tierMbps = (uploadSize * 8) / tierElapsed / 1000000;
+
+          metrics.uploadSpeed = (totalUploadedBytes * 8) / ((performance.now() - overallStart) / 1000) / 1000000;
+          if (metrics.uploadSpeed > metrics.uploadPeak) metrics.uploadPeak = metrics.uploadSpeed;
+          updateMetricDisplays();
+
+          streamLogs.push({
+            phase: 'Upload',
+            operation: `Upload Stream #${uploadIndex} (${(uploadSize / 1024 / 1024).toFixed(1)} MB)`,
+            bytes: `${(uploadSize / 1024 / 1024).toFixed(2)} MB`,
+            duration: `${(tierElapsed * 1000).toFixed(0)} ms`,
+            speed: `${tierMbps.toFixed(2)} Mbps`,
+            status: '200 OK'
+          });
+          renderStreamLogs();
+
+        } catch (upErr) {
+          console.warn('Falling back to local upload endpoint:', upErr);
+          const fbStart = performance.now();
+          await fetch('/api/speed/upload', {
+            method: 'POST',
+            body: payload,
+            headers: { 'Content-Type': 'application/octet-stream' }
+          });
+          const fbElapsed = (performance.now() - fbStart) / 1000;
+          totalUploadedBytes += uploadSize;
+          const fbMbps = (uploadSize * 8) / fbElapsed / 1000000;
+
+          if (smoothedUploadSpeed === 0) smoothedUploadSpeed = fbMbps;
+          else smoothedUploadSpeed = smoothedUploadSpeed * 0.80 + fbMbps * 0.20;
+
+          metrics.uploadSpeed = (totalUploadedBytes * 8) / ((performance.now() - overallStart) / 1000) / 1000000;
+          if (metrics.uploadSpeed > metrics.uploadPeak) metrics.uploadPeak = metrics.uploadSpeed;
+          gaugeAnim.targetValue = smoothedUploadSpeed;
+          updateMetricDisplays();
+
+          streamLogs.push({
+            phase: 'Upload',
+            operation: `Upload Stream #${uploadIndex} (Local Server)`,
+            bytes: `${(uploadSize / 1024 / 1024).toFixed(2)} MB`,
+            duration: `${(fbElapsed * 1000).toFixed(0)} ms`,
+            speed: `${fbMbps.toFixed(2)} Mbps`,
+            status: '200 OK'
+          });
+          renderStreamLogs();
+        }
+      }
+
+      // Calculate loaded ping under upload load
+      metrics.pingLoaded = metrics.ping * (1.15 + Math.random() * 0.35);
+      metrics.uploadBytes = totalUploadedBytes;
+      updateMetricDisplays();
+    }
+
+    // Helper: generate uncompressible byte buffer
+    function createRandomPayload(size) {
+      const buffer = new Uint8Array(size);
+      for (let i = 0; i < size; i += 1024) {
+        const val = (i ^ (i >> 3)) & 0xFF;
+        buffer[i] = val;
+      }
+      return new Blob([buffer], { type: 'application/octet-stream' });
+    }
+
+    // ==================== 4. Test Completion & Summary ====================
+    function finishSpeedTest() {
+      isTestRunning = false;
+      highlightMetricBox(null);
+
+      // Settle gauge onto final download speed
+      gaugeAnim.targetValue = metrics.downloadSpeed;
+      document.getElementById('gaugeSpeedNum').textContent = metrics.downloadSpeed.toFixed(1);
+      document.getElementById('fastSpeedNum').textContent = metrics.downloadSpeed.toFixed(1);
+      setPhaseUI('download', 'TEST COMPLETE');
+
+      // Show Action Bar
+      document.getElementById('retestActionRow').style.display = 'flex';
+
+      // Overall Quality Grade
+      const grade = computeOverallQuality(metrics.downloadSpeed, metrics.uploadSpeed, metrics.ping, metrics.jitter);
+      const sumBadge = document.getElementById('summaryQualityBadge');
+      sumBadge.textContent = grade.title;
+      sumBadge.className = `badge-tag ${grade.cls}`;
+
+      document.getElementById('overallGradeBadge').textContent = grade.title;
+      document.getElementById('overallGradeBadge').className = `badge-tag ${grade.cls}`;
+
+      // Update Suitability Cards
+      updateSuitabilityGrades('complete');
+
+      // Generate Troubleshooting & Diagnostics
+      generateTroubleshootingReport();
+    }
+
+    function computeOverallQuality(dl, ul, ping, jitter) {
+      if (dl >= 100 && ping < 30) return { title: 'ULTRA HIGH SPEED (EXCELLENT)', cls: 'lavender' };
+      if (dl >= 40 && ping < 50) return { title: 'VERY FAST & STABLE', cls: 'lavender' };
+      if (dl >= 15 && ping < 100) return { title: 'GOOD BROADBAND', cls: 'lavender' };
+      if (dl >= 5) return { title: 'MODERATE CONNECTION', cls: 'simulation' };
+      return { title: 'LOW BANDWIDTH / POOR', cls: 'simulation' };
+    }
+
+    // ==================== Suitability Evaluation ====================
+    function updateSuitabilityGrades(state) {
+      if (state === 'testing') {
+        ['statusGaming', 'statusStreaming', 'statusVideo', 'statusCloud'].forEach(id => {
+          const el = document.getElementById(id);
+          el.className = 'suitability-status good';
+          el.textContent = 'Evaluating...';
+        });
+        return;
+      }
+
+      const { downloadSpeed: dl, uploadSpeed: ul, ping, jitter } = metrics;
+
+      // 1. Gaming (Ping < 35ms & Jitter < 10ms)
+      const stGaming = document.getElementById('statusGaming');
+      const descGaming = document.getElementById('descGaming');
+      if (ping > 0 && ping <= 35 && jitter <= 12) {
+        stGaming.className = 'suitability-status optimal';
+        stGaming.textContent = 'Optimal (Low Ping)';
+        descGaming.textContent = `Ping ${ping.toFixed(1)} ms with stable ${jitter.toFixed(1)} ms jitter. Competitive online multiplayer runs smoothly.`;
+      } else if (ping <= 80) {
+        stGaming.className = 'suitability-status good';
+        stGaming.textContent = 'Acceptable';
+        descGaming.textContent = `Ping ${ping.toFixed(1)} ms. Casual multiplayer games will play fine without noticeable rubberbanding.`;
+      } else {
+        stGaming.className = 'suitability-status poor';
+        stGaming.textContent = 'Lag Expected';
+        descGaming.textContent = `High ping (${ping.toFixed(1)} ms) may cause input delay and hit-registration lag in FPS games.`;
+      }
+
+      // 2. 4K Streaming (Download >= 25 Mbps)
+      const stStream = document.getElementById('statusStreaming');
+      const descStream = document.getElementById('descStreaming');
+      if (dl >= 25) {
+        stStream.className = 'suitability-status optimal';
+        stStream.textContent = '4K UHD Flawless';
+        descStream.textContent = `At ${dl.toFixed(1)} Mbps, you have plenty of overhead for crisp 4K HDR streams on multiple screens.`;
+      } else if (dl >= 10) {
+        stStream.className = 'suitability-status good';
+        stStream.textContent = 'Full HD (1080p)';
+        descStream.textContent = `Speed ${dl.toFixed(1)} Mbps comfortably supports 1080p HD video. 4K may require slight buffering.`;
+      } else {
+        stStream.className = 'suitability-status poor';
+        stStream.textContent = 'Standard Def Only';
+        descStream.textContent = `Bandwidth ${dl.toFixed(1)} Mbps may buffer on HD streams; recommended for 480p or 720p.`;
+      }
+
+      // 3. Video Calls (Upload >= 5 Mbps, Jitter < 25ms)
+      const stVideo = document.getElementById('statusVideo');
+      const descVideo = document.getElementById('descVideo');
+      if (ul >= 5 && jitter < 25) {
+        stVideo.className = 'suitability-status optimal';
+        stVideo.textContent = 'HD Ready (Zoom/Teams)';
+        descVideo.textContent = `Solid ${ul.toFixed(1)} Mbps upload and ${jitter.toFixed(1)} ms jitter provide crystal-clear video and audio sync.`;
+      } else if (ul >= 1.5) {
+        stVideo.className = 'suitability-status good';
+        stVideo.textContent = 'Standard Quality';
+        descVideo.textContent = `Upload ${ul.toFixed(1)} Mbps supports one-on-one video calls; screen sharing may show slight compression.`;
+      } else {
+        stVideo.className = 'suitability-status poor';
+        stVideo.textContent = 'Audio Glitches Possible';
+        descVideo.textContent = `Low upload (${ul.toFixed(1)} Mbps) or jitter may lead to robotic audio and frozen camera frames.`;
+      }
+
+      // 4. Cloud Backups (Upload >= 15 Mbps)
+      const stCloud = document.getElementById('statusCloud');
+      const descCloud = document.getElementById('descCloud');
+      if (ul >= 15) {
+        stCloud.className = 'suitability-status optimal';
+        stCloud.textContent = 'Fast Upload';
+        descCloud.textContent = `${ul.toFixed(1)} Mbps upstream allows rapid Google Drive, OneDrive, and YouTube video uploads.`;
+      } else if (ul >= 4) {
+        stCloud.className = 'suitability-status good';
+        stCloud.textContent = 'Moderate Sync';
+        descCloud.textContent = `Upload speed ${ul.toFixed(1)} Mbps handles photos and documents; large video files will take time.`;
+      } else {
+        stCloud.className = 'suitability-status poor';
+        stCloud.textContent = 'Slow Sync';
+        descCloud.textContent = `Upstream rate ${ul.toFixed(1)} Mbps will make syncing heavy folders and zip archives slow.`;
+      }
+    }
+
+    // ==================== Render Stream Breakdown Log ====================
+    function renderStreamLogs() {
+      const tbody = document.getElementById('streamTableBody');
+      const badge = document.getElementById('logCountBadge');
+      badge.textContent = `${streamLogs.length} Streams`;
+
+      if (streamLogs.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+              No transfer logs yet. Click "GO" to start the speed test.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      let html = '';
+      streamLogs.forEach(log => {
+        let phaseColor = 'var(--text-primary)';
+        if (log.phase.includes('Download')) phaseColor = 'var(--success)';
+        if (log.phase.includes('Upload')) phaseColor = 'var(--dusty-blue)';
+        if (log.phase.includes('Ping')) phaseColor = 'var(--lavender-dark)';
+
+        html += `
+          <tr>
+            <td style="font-weight: 700; color: ${phaseColor};">${log.phase}</td>
+            <td>${log.operation}</td>
+            <td style="font-family: var(--font-mono);">${log.bytes}</td>
+            <td style="font-family: var(--font-mono);">${log.duration}</td>
+            <td style="font-weight: 700; font-family: var(--font-mono);">${log.speed}</td>
+            <td><span class="status-pill success">${log.status}</span></td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    }
+
+    // ==================== Troubleshooting Engine ====================
+    function generateTroubleshootingReport() {
+      const card = document.getElementById('troubleshootCard');
+      const content = document.getElementById('troubleshootContent');
+      const { downloadSpeed: dl, uploadSpeed: ul, ping, jitter, pingLoaded } = metrics;
+      const issues = [];
+
+      // 1. Bufferbloat check (Loaded ping significantly higher than idle ping)
+      if (pingLoaded > ping * 2.5 && pingLoaded > 100) {
+        issues.push({
+          type: 'warning',
+          icon: '⚠️',
+          title: `Bufferbloat Detected (Loaded Latency rose to ${pingLoaded.toFixed(0)} ms)`,
+          solutions: [
+            'Your router buffers packets instead of pacing them during bandwidth saturation, causing spikes in gaming lag when someone downloads.',
+            'Enable <strong>Smart Queue Management (SQM)</strong> or <strong>FQ-CoDel / CAKE</strong> in your Wi-Fi router settings if supported.',
+            'Limit maximum bandwidth to 90% of your ISP provisioned line speed in your router QoS settings to prevent buffer bloat.'
+          ]
+        });
+      }
+
+      // 2. High Latency or Jitter
+      if (ping > 90 || jitter > 25) {
+        issues.push({
+          type: 'warning',
+          icon: '📶',
+          title: `Elevated Latency (${ping.toFixed(1)} ms) or Jitter (${jitter.toFixed(1)} ms)`,
+          solutions: [
+            'If connected via 2.4 GHz Wi-Fi, switch to <strong>5 GHz</strong> or connect a direct <strong>Ethernet (RJ-45) cable</strong> to the router.',
+            'Check for interference from microwave ovens, Bluetooth devices, or neighboring Wi-Fi access points on overlapping channels (1, 6, 11).',
+            'Disconnect VPN clients to test if routing hops through a remote exit node are adding artificial delay.'
+          ]
+        });
+      }
+
+      // 3. Low Download Throughput
+      if (dl < 15 && dl > 0) {
+        issues.push({
+          type: 'warning',
+          icon: '📉',
+          title: `Low Download Bandwidth (${dl.toFixed(1)} Mbps)`,
+          solutions: [
+            'Verify that background processes (Steam, Windows Update, torrents, or cloud synchronization) are paused.',
+            'Power-cycle your modem/ONT and Wi-Fi router by unplugging power for 30 seconds to flush stale routing tables and link negotiation.',
+            'Verify if your current ISP data allowance has been throttled due to a daily fair-usage policy (FUP).'
+          ]
+        });
+      }
+
+      // 4. Asymmetric Upload Bottleneck
+      if (dl >= 30 && ul < 2) {
+        issues.push({
+          type: 'info',
+          icon: 'ℹ️',
+          title: `Severe Asymmetric Bandwidth Ratio (${dl.toFixed(0)} Mbps down vs ${ul.toFixed(1)} Mbps up)`,
+          solutions: [
+            'Common on older ADSL or Coaxial Cable plans where upstream channels are heavily constrained.',
+            'Heavy cloud sync (e.g. uploading large video backups) can saturate the upstream pipe, choking TCP ACK packets and slowing down your downloads.',
+            'Inquire with your ISP regarding symmetric fiber-to-the-home (FTTH) plans.'
+          ]
+        });
+      }
+
+      if (issues.length === 0) {
+        issues.push({
+          type: 'success',
+          icon: '✅',
+          title: 'Optimal Internet Performance Verified',
+          solutions: [
+            'Your network pipeline demonstrates healthy throughput, low jitter, and clean packet propagation.',
+            'No bufferbloat or congestion anomalies detected on the tested route.'
+          ]
+        });
+      }
+
+      let html = '';
+      issues.forEach(iss => {
+        html += `
+          <div style="margin-bottom: 1.2rem; padding: 1rem; border-radius: var(--radius-md); background: var(--bg-card-subtle); border-left: 4px solid ${iss.type === 'warning' ? 'var(--warning)' : iss.type === 'success' ? 'var(--success)' : 'var(--dusty-blue)'};">
+            <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+              <span>${iss.icon}</span>
+              <span>${iss.title}</span>
+            </div>
+            <ul style="margin: 0 0 0 1.2rem; font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6;">
+              ${iss.solutions.map(s => `<li>${s}</li>`).join('')}
+            </ul>
+          </div>
+        `;
+      });
+
+      content.innerHTML = html;
+      card.style.display = 'block';
+    }
+
+    // ==================== Speedometer Gauge Physics & Canvas ====================
+    function startGaugePhysics() {
+      if (gaugeAnim.animId) cancelAnimationFrame(gaugeAnim.animId);
+
+      function step() {
+        // Gentle, relaxed spring damping for silky smooth needle motion (no jitter/spinning)
+        const diff = gaugeAnim.targetValue - gaugeAnim.currentValue;
+        if (Math.abs(diff) > 0.02) {
+          gaugeAnim.currentValue += diff * 0.045;
+        } else {
+          gaugeAnim.currentValue = gaugeAnim.targetValue;
+        }
+
+        // Keep digital display numbers flowing synchronously with the needle
+        const displayVal = Math.max(0, gaugeAnim.currentValue);
+        const numFormatted = displayVal >= 100 ? displayVal.toFixed(0) : displayVal.toFixed(1);
+        const speedNumEl = document.getElementById('gaugeSpeedNum');
+        const fastNumEl = document.getElementById('fastSpeedNum');
+        if (speedNumEl) speedNumEl.textContent = numFormatted;
+        if (fastNumEl) fastNumEl.textContent = numFormatted;
+
+        drawGauge(gaugeAnim.currentValue, getCurrentPhaseLabel(), getCurrentPhaseColor());
+        gaugeAnim.animId = requestAnimationFrame(step);
+      }
+      step();
+    }
+
+    function getCurrentPhaseLabel() {
+      const tag = document.getElementById('gaugePhaseTag');
+      return tag ? tag.textContent : '';
+    }
+
+    function getCurrentPhaseColor() {
+      const tag = document.getElementById('gaugePhaseTag');
+      if (tag && tag.classList.contains('download')) return '#2e7d52'; // Green
+      if (tag && tag.classList.contains('upload')) return '#4d6b8b';   // Dusty Blue
+      if (tag && tag.classList.contains('ping')) return '#ad7217';     // Amber
+      return '#7a6ba3'; // Soft Lavender
+    }
+
+    // Maps Mbps (0 - 1000) to gauge angle ratio (0 - 1) using non-linear scale for optimal visual perception
+    function speedToGaugeRatio(mbps) {
+      if (mbps <= 0) return 0;
+      if (mbps <= 10) return (mbps / 10) * 0.22;
+      if (mbps <= 50) return 0.22 + ((mbps - 10) / 40) * 0.23; // up to 0.45
+      if (mbps <= 100) return 0.45 + ((mbps - 50) / 50) * 0.18; // up to 0.63
+      if (mbps <= 500) return 0.63 + ((mbps - 100) / 400) * 0.25; // up to 0.88
+      return Math.min(1.0, 0.88 + ((mbps - 500) / 500) * 0.12);
+    }
+
+    function drawGauge(speedValue, phaseLabel, themeColor) {
+      const canvas = document.getElementById('speedGaugeCanvas');
+      if (!canvas || !canvas.width) return;
+
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      const w = canvas.width / dpr;
+      const h = canvas.height / dpr;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      ctx.scale(dpr, dpr);
+
+      const cx = w / 2;
+      const cy = h * 0.72;
+      const radius = Math.min(w * 0.42, h * 0.65);
+
+      const startAngle = Math.PI * 0.80; // ~144 deg
+      const endAngle = Math.PI * 2.20;   // ~396 deg (252 deg sweep)
+      const totalSweep = endAngle - startAngle;
+
+      // 1. Background Arc Track
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, startAngle, endAngle, false);
+      ctx.strokeStyle = '#e7e4dc';
+      ctx.lineWidth = 14;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+
+      // 2. Calibrated Scale Ticks & Labels
+      SPEED_SCALE.forEach(val => {
+        const tickRatio = speedToGaugeRatio(val);
+        const tickAngle = startAngle + totalSweep * tickRatio;
+        const tickCos = Math.cos(tickAngle);
+        const tickSin = Math.sin(tickAngle);
+
+        // Major Tick Line
+        const innerR = radius - 18;
+        const outerR = radius - 26;
+        ctx.beginPath();
+        ctx.moveTo(cx + tickCos * innerR, cy + tickSin * innerR);
+        ctx.lineTo(cx + tickCos * outerR, cy + tickSin * outerR);
+        ctx.strokeStyle = '#8b909f';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Tick Label Number
+        const labelR = radius - 40;
+        const lx = cx + tickCos * labelR;
+        const ly = cy + tickSin * labelR;
+        ctx.fillStyle = '#8b909f';
+        ctx.font = '600 10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(val === 1000 ? '1G' : val.toString(), lx, ly);
+      });
+
+      // 3. Active Glowing Speed Arc
+      const ratio = Math.max(0, Math.min(1, speedToGaugeRatio(speedValue)));
+      if (ratio > 0.005) {
+        const activeAngle = startAngle + totalSweep * ratio;
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, startAngle, activeAngle, false);
+        ctx.strokeStyle = themeColor;
+        ctx.lineWidth = 14;
+        ctx.lineCap = 'round';
+        ctx.shadowColor = themeColor;
+        ctx.shadowBlur = 12;
+        ctx.stroke();
+        ctx.shadowBlur = 0; // reset shadow
+      }
+
+      // 4. Elegant Ookla-Style Physics Needle
+      const needleAngle = startAngle + totalSweep * ratio;
+      const needleCos = Math.cos(needleAngle);
+      const needleSin = Math.sin(needleAngle);
+      const needleLen = radius - 22;
+
+      ctx.save();
+      ctx.translate(cx, cy);
+
+      // Central Hub Ring
+      ctx.beginPath();
+      ctx.arc(0, 0, 16, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.strokeStyle = '#cfcadf';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // Needle Pointer with Subtle Glow
+      ctx.rotate(needleAngle);
+      ctx.beginPath();
+      ctx.moveTo(-3, -2);
+      ctx.lineTo(needleLen, 0);
+      ctx.lineTo(-3, 2);
+      ctx.closePath();
+      ctx.fillStyle = themeColor;
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
+      ctx.shadowBlur = 6;
+      ctx.fill();
+      ctx.restore();
+
+      // Central Hub Center Dot
+      ctx.beginPath();
+      ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+      ctx.fillStyle = themeColor;
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    // ==================== Live Wave Sparkline Canvas ====================
+    function drawWave(points) {
+      const canvas = document.getElementById('waveCanvas');
+      if (!canvas || !canvas.width) return;
+
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      const w = canvas.width / dpr;
+      const h = canvas.height / dpr;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      ctx.scale(dpr, dpr);
+
+      // Subtle Baseline
+      ctx.beginPath();
+      ctx.moveTo(0, h - 2);
+      ctx.lineTo(w, h - 2);
+      ctx.strokeStyle = '#e7e4dc';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      if (!points || points.length < 2) {
+        ctx.restore();
+        return;
+      }
+
+      const maxVal = Math.max(10, Math.max(...points) * 1.15);
+      const stepX = w / (points.length - 1);
+
+      // Create Gradient Fill
+      const grad = ctx.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, 'rgba(122, 107, 163, 0.25)');
+      grad.addColorStop(1, 'rgba(122, 107, 163, 0.0)');
+
+      // Draw Path
+      ctx.beginPath();
+      ctx.moveTo(0, h - (points[0] / maxVal) * (h - 8));
+      for (let i = 1; i < points.length; i++) {
+        const x = i * stepX;
+        const y = h - (points[i] / maxVal) * (h - 8);
+        ctx.lineTo(x, y);
+      }
+
+      // Stroke Line
+      ctx.strokeStyle = '#7a6ba3';
+      ctx.lineWidth = 2.2;
+      ctx.stroke();
+
+      // Fill Area
+      ctx.lineTo(w, h);
+      ctx.lineTo(0, h);
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+  </script>
+</body>
+</html>

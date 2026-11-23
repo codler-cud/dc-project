@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Packet Simulator — NEXUS</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="brand-link">
+        <div class="brand-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">NEXUS</span>
+          <span class="brand-tag">Network Analyzer</span>
+        </div>
+      </a>
+      <ul class="nav-menu">
+        <li class="nav-item"><a href="index.html">Home</a></li>
+        <li class="nav-item"><a href="checker.html">Connection Checker</a></li>
+        <li class="nav-item"><a href="speedtest.html">Speed Checker</a></li>
+        <li class="nav-item"><a href="monitor.html">Latency Monitor</a></li>
+        <li class="nav-item"><a href="simulator.html" class="active">Packet Simulator</a></li>
+        <li class="nav-item"><a href="credits.html">Credits</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="page-header">
+      <div class="badge-tag simulation">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        Simulation Environment (Educational Model)
+      </div>
+      <h1 class="page-title">Packet Transmission Simulator</h1>
+      <p class="page-subtitle">
+        Visual simulation demonstrating packet propagation, transmission delay, and queue-based packet dropping across a three-node network topology: <strong>Client → Router → Server</strong>.
+      </p>
+    </div>
+
+    <!-- Configuration Sliders Card -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+      <div class="sim-controls-grid">
+        
+        <!-- Slider 1: Transmission Delay -->
+        <div class="slider-group">
+          <div class="slider-header">
+            <span>Transmission Delay</span>
+            <span class="slider-val" id="valDelay">500 ms</span>
+          </div>
+          <input 
+            type="range" 
+            id="sliderDelay" 
+            min="150" 
+            max="1500" 
+            step="50" 
+            value="500" 
+            oninput="updateDelayDisplay(this.value)"
+          >
+          <span style="font-size: 0.72rem; color: var(--text-muted);">Hop-to-hop propagation latency</span>
+        </div>
+
+        <!-- Slider 2: Packet Loss % -->
+        <div class="slider-group">
+          <div class="slider-header">
+            <span>Packet Loss Rate</span>
+            <span class="slider-val" id="valLoss">15 %</span>
+          </div>
+          <input 
+            type="range" 
+            id="sliderLoss" 
+            min="0" 
+            max="60" 
+            step="5" 
+            value="15" 
+            oninput="updateLossDisplay(this.value)"
+          >
+          <span style="font-size: 0.72rem; color: var(--text-muted);">Probability of router buffer drops</span>
+        </div>
+
+        <!-- Slider 3: Number of Packets -->
+        <div class="slider-group">
+          <div class="slider-header">
+            <span>Total Packets</span>
+            <span class="slider-val" id="valCount">10 pkts</span>
+          </div>
+          <input 
+            type="range" 
+            id="sliderCount" 
+            min="5" 
+            max="30" 
+            step="5" 
+            value="10" 
+            oninput="updateCountDisplay(this.value)"
+          >
+          <span style="font-size: 0.72rem; color: var(--text-muted);">Burst size to dispatch</span>
+        </div>
+
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+        <button type="button" id="startSimBtn" class="btn btn-primary" onclick="startSimulation()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          <span id="startBtnLabel">Start Simulation</span>
+        </button>
+
+        <button type="button" id="pauseSimBtn" class="btn btn-secondary" onclick="togglePauseSimulation()" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="6" y="4" width="4" height="16"></rect>
+            <rect x="14" y="4" width="4" height="16"></rect>
+          </svg>
+          <span id="pauseBtnLabel">Pause</span>
+        </button>
+
+        <button type="button" id="resetSimBtn" class="btn btn-outline" onclick="resetSimulation()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+          </svg>
+          Reset
+        </button>
+      </div>
+    </div>
+
+    <!-- Interactive Topology Canvas -->
+    <div class="simulator-topology" id="topologyContainer">
+      
+      <!-- Canvas Overlay for animating packets -->
+      <canvas id="simCanvas"></canvas>
+
+      <!-- Nodes Layout -->
+      <div class="topology-nodes">
+        
+        <!-- Node 1: Client -->
+        <div class="sim-node" id="nodeClient">
+          <div class="node-icon-wrapper">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+          </div>
+          <div class="node-name">CLIENT</div>
+          <div class="node-ip">192.168.1.10</div>
+          <div class="badge-tag" style="margin-top: 0.35rem; font-size: 0.65rem;">Source Host</div>
+        </div>
+
+        <!-- Link 1: Client to Router -->
+        <div class="sim-link">
+          <div class="link-line"></div>
+          <div class="link-label">Link A (LAN)</div>
+        </div>
+
+        <!-- Node 2: Router -->
+        <div class="sim-node router" id="nodeRouter">
+          <div class="node-icon-wrapper">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+              <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+              <line x1="6" y1="6" x2="6.01" y2="6"></line>
+              <line x1="6" y1="18" x2="6.01" y2="18"></line>
+            </svg>
+          </div>
+          <div class="node-name">ROUTER</div>
+          <div class="node-ip">192.168.1.1</div>
+          <div class="badge-tag lavender" style="margin-top: 0.35rem; font-size: 0.65rem;">Routing Node</div>
+        </div>
+
+        <!-- Link 2: Router to Server -->
+        <div class="sim-link">
+          <div class="link-line"></div>
+          <div class="link-label">Link B (WAN)</div>
+        </div>
+
+        <!-- Node 3: Server -->
+        <div class="sim-node" id="nodeServer">
+          <div class="node-icon-wrapper">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+            </svg>
+          </div>
+          <div class="node-name">SERVER</div>
+          <div class="node-ip">203.0.113.80</div>
+          <div class="badge-tag" style="margin-top: 0.35rem; font-size: 0.65rem;">Destination</div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Live Simulation Telemetry -->
+    <div class="metrics-grid">
+      
+      <div class="stat-card">
+        <div class="stat-label">Packets Sent</div>
+        <div class="stat-value" id="statSent">0</div>
+        <div class="stat-sub">Dispatched from Client</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">Packets Received</div>
+        <div class="stat-value" id="statReceived" style="color: var(--success);">0</div>
+        <div class="stat-sub">Delivered at Server</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">Packets Dropped</div>
+        <div class="stat-value" id="statDropped" style="color: var(--error);">0</div>
+        <div class="stat-sub">Lost at Router Buffer</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">Effective Delivery Rate</div>
+        <div class="stat-value">
+          <span id="statDeliveryRate">100</span>
+          <span class="stat-unit">%</span>
+        </div>
+        <div class="stat-sub">Throughput efficiency</div>
+      </div>
+
+    </div>
+
+    <!-- Event Console Log -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="4 17 10 11 4 5"></polyline>
+            <line x1="12" y1="19" x2="20" y2="19"></line>
+          </svg>
+          Packet Transmission Event Log
+        </div>
+        <button class="btn btn-sm btn-outline" onclick="clearConsoleLog()">Clear Log</button>
+      </div>
+
+      <div class="console-box" id="simConsole">
+        <div class="console-entry">
+          <span class="console-time">[READY]</span>
+          <span class="console-msg info">Simulator initialized. Adjust parameters and click "Start Simulation".</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Educational Context Box -->
+    <div class="academic-box">
+      <div class="academic-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        Data Communications Principle: Store-and-Forward Packet Switching
+      </div>
+      <div class="academic-desc">
+        In computer networks, routers operate using the <strong>store-and-forward</strong> mechanism. An entire packet must be received at the router before it can be transmitted onto the outgoing link. If the arrival rate exceeds the output link capacity or buffer memory fills up, the router experiences <strong>queue congestion</strong>, resulting in packet drops. This simulation visually demonstrates how transmission delays and probabilistic loss directly affect overall throughput.
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-left">
+        <span class="footer-brand">NEXUS — Smart Network Performance Analyzer</span>
+        <span class="footer-copy">Interactive Packet Simulation • Vanilla JS & HTML5 Canvas</span>
+      </div>
+      <div class="footer-right">
+        <div>Developers: Sarthak Gawande • Sarvadnya Umalkar • Lokesh Dhakad</div>
+        <div style="color: var(--text-muted); font-size: 0.75rem;">Data Communications & Computer Networks</div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Script -->
+  <script>
+    // Canvas & Stage Elements
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+    const container = document.getElementById('topologyContainer');
+
+    // Controls
+    const sliderDelay = document.getElementById('sliderDelay');
+    const sliderLoss = document.getElementById('sliderLoss');
+    const sliderCount = document.getElementById('sliderCount');
+    const startBtn = document.getElementById('startSimBtn');
+    const pauseBtn = document.getElementById('pauseSimBtn');
+    const resetBtn = document.getElementById('resetSimBtn');
+    const startBtnLabel = document.getElementById('startBtnLabel');
+    const pauseBtnLabel = document.getElementById('pauseBtnLabel');
+    const simConsole = document.getElementById('simConsole');
+
+    // Stats
+    let sentCount = 0;
+    let receivedCount = 0;
+    let droppedCount = 0;
+
+    // Simulation State
+    let isSimRunning = false;
+    let isSimPaused = false;
+    let packets = []; // Active packet objects in flight
+    let nextPacketId = 1;
+    let totalToDispatch = 10;
+    let dispatchTimer = null;
+    let animationFrameId = null;
+    let lastTime = null;
+
+    // Node Positions in Canvas Coordinates
+    let clientPos = { x: 0, y: 0 };
+    let routerPos = { x: 0, y: 0 };
+    let serverPos = { x: 0, y: 0 };
+
+    function updateDelayDisplay(v) { document.getElementById('valDelay').textContent = `${v} ms`; }
+    function updateLossDisplay(v) { document.getElementById('valLoss').textContent = `${v} %`; }
+    function updateCountDisplay(v) { document.getElementById('valCount').textContent = `${v} pkts`; }
+
+    function resizeSimCanvas() {
+      const rect = container.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.resetTransform();
+      ctx.scale(dpr, dpr);
+
+      // Calculate center points of nodes
+      const clientNode = document.getElementById('nodeClient').getBoundingClientRect();
+      const routerNode = document.getElementById('nodeRouter').getBoundingClientRect();
+      const serverNode = document.getElementById('nodeServer').getBoundingClientRect();
+
+      clientPos = {
+        x: clientNode.left - rect.left + clientNode.width / 2,
+        y: clientNode.top - rect.top + 32
+      };
+      routerPos = {
+        x: routerNode.left - rect.left + routerNode.width / 2,
+        y: routerNode.top - rect.top + 32
+      };
+      serverPos = {
+        x: serverNode.left - rect.left + serverNode.width / 2,
+        y: serverNode.top - rect.top + 32
+      };
+
+      drawPackets();
+    }
+
+    window.addEventListener('resize', resizeSimCanvas);
+    window.addEventListener('DOMContentLoaded', resizeSimCanvas);
+
+    function logEvent(msg, type = 'info') {
+      const entry = document.createElement('div');
+      entry.className = 'console-entry';
+      const now = new Date().toTimeString().split(' ')[0];
+      entry.innerHTML = `
+        <span class="console-time">[${now}]</span>
+        <span class="console-msg ${type}">${msg}</span>
+      `;
+      simConsole.prepend(entry);
+    }
+
+    function clearConsoleLog() {
+      simConsole.innerHTML = '';
+      logEvent('Console log cleared.', 'info');
+    }
+
+    function startSimulation() {
+      if (isSimRunning && isSimPaused) {
+        togglePauseSimulation();
+        return;
+      }
+
+      resetSimulation();
+
+      isSimRunning = true;
+      isSimPaused = false;
+      totalToDispatch = parseInt(sliderCount.value);
+      nextPacketId = 1;
+
+      startBtn.disabled = true;
+      pauseBtn.disabled = false;
+      sliderCount.disabled = true;
+      sliderDelay.disabled = true;
+      sliderLoss.disabled = true;
+
+      logEvent(`Simulation started: Dispatching ${totalToDispatch} packets with ${sliderDelay.value}ms delay and ${sliderLoss.value}% loss.`, 'info');
+
+      dispatchNextPacket();
+      lastTime = performance.now();
+      animationFrameId = requestAnimationFrame(animateLoop);
+    }
+
+    function togglePauseSimulation() {
+      if (!isSimRunning) return;
+
+      if (!isSimPaused) {
+        isSimPaused = true;
+        pauseBtnLabel.textContent = "Resume";
+        logEvent('Simulation paused by user.', 'info');
+        clearTimeout(dispatchTimer);
+      } else {
+        isSimPaused = false;
+        pauseBtnLabel.textContent = "Pause";
+        logEvent('Simulation resumed.', 'info');
+        lastTime = performance.now();
+        dispatchNextPacket();
+      }
+    }
+
+    function resetSimulation() {
+      isSimRunning = false;
+      isSimPaused = false;
+      clearTimeout(dispatchTimer);
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+
+      packets = [];
+      sentCount = 0;
+      receivedCount = 0;
+      droppedCount = 0;
+      nextPacketId = 1;
+
+      document.getElementById('statSent').textContent = '0';
+      document.getElementById('statReceived').textContent = '0';
+      document.getElementById('statDropped').textContent = '0';
+      document.getElementById('statDeliveryRate').textContent = '100';
+
+      startBtn.disabled = false;
+      pauseBtn.disabled = true;
+      startBtnLabel.textContent = "Start Simulation";
+      pauseBtnLabel.textContent = "Pause";
+      sliderCount.disabled = false;
+      sliderDelay.disabled = false;
+      sliderLoss.disabled = false;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      logEvent('Simulation reset to initial state.', 'info');
+    }
+
+    function dispatchNextPacket() {
+      if (!isSimRunning || isSimPaused) return;
+
+      if (nextPacketId <= totalToDispatch) {
+        const id = nextPacketId++;
+        sentCount++;
+        document.getElementById('statSent').textContent = sentCount;
+        updateDeliveryRate();
+
+        const delay = parseInt(sliderDelay.value);
+        const lossRate = parseInt(sliderLoss.value);
+
+        // Pre-determine loss at router based on configured loss rate %
+        const isDroppedAtRouter = Math.random() * 100 < lossRate;
+
+        packets.push({
+          id: id,
+          stage: 1, // 1: Client -> Router, 2: Router -> Server, 3: Dropped, 4: Delivered
+          progress: 0, // 0 to 1
+          duration: delay, // ms per link traversal
+          dropAtRouter: isDroppedAtRouter,
+          opacity: 1.0,
+          color: '#4d6b8b', // dusty blue
+          x: clientPos.x,
+          y: clientPos.y
+        });
+
+        logEvent(`Packet #${id} dispatched from Client -> Router (Delay: ${delay}ms)`, 'info');
+
+        // Interval before sending next packet (delay * 0.75 or 400ms min)
+        const nextDispatchDelay = Math.max(300, delay * 0.65);
+        if (nextPacketId <= totalToDispatch) {
+          dispatchTimer = setTimeout(dispatchNextPacket, nextDispatchDelay);
+        }
+      }
+    }
+
+    function animateLoop(now) {
+      if (!isSimRunning) return;
+
+      if (!isSimPaused) {
+        const dt = now - lastTime;
+        updatePackets(dt);
+        drawPackets();
+      }
+
+      lastTime = now;
+
+      // Check if simulation finished
+      if (nextPacketId > totalToDispatch && packets.length === 0) {
+        finishSimulation();
+        return;
+      }
+
+      animationFrameId = requestAnimationFrame(animateLoop);
+    }
+
+    function updatePackets(dt) {
+      for (let i = packets.length - 1; i >= 0; i--) {
+        const p = packets[i];
+
+        if (p.stage === 1) {
+          // Traversal from Client to Router
+          p.progress += dt / p.duration;
+          p.x = clientPos.x + (routerPos.x - clientPos.x) * p.progress;
+          p.y = clientPos.y + (routerPos.y - clientPos.y) * p.progress;
+
+          if (p.progress >= 1.0) {
+            p.progress = 0;
+            p.x = routerPos.x;
+            p.y = routerPos.y;
+
+            if (p.dropAtRouter) {
+              p.stage = 3; // Dropped
+              p.color = '#b94242'; // red
+              droppedCount++;
+              document.getElementById('statDropped').textContent = droppedCount;
+              updateDeliveryRate();
+              logEvent(`Packet #${p.id} DROPPED at Router [Loss condition triggered]`, 'dropped');
+            } else {
+              p.stage = 2; // Forwarding Router -> Server
+              p.color = '#7a6ba3'; // lavender
+              logEvent(`Packet #${p.id} forwarded by Router -> Server`, 'info');
+            }
+          }
+        } 
+        else if (p.stage === 2) {
+          // Traversal from Router to Server
+          p.progress += dt / p.duration;
+          p.x = routerPos.x + (serverPos.x - routerPos.x) * p.progress;
+          p.y = routerPos.y + (serverPos.y - routerPos.y) * p.progress;
+
+          if (p.progress >= 1.0) {
+            p.stage = 4; // Delivered
+            p.x = serverPos.x;
+            p.y = serverPos.y;
+            receivedCount++;
+            document.getElementById('statReceived').textContent = receivedCount;
+            updateDeliveryRate();
+            logEvent(`Packet #${p.id} DELIVERED to Server successfully!`, 'success');
+          }
+        } 
+        else if (p.stage === 3 || p.stage === 4) {
+          // Fade out animation for dropped or delivered packets
+          p.opacity -= dt / 400; // fade over 400ms
+          if (p.opacity <= 0) {
+            packets.splice(i, 1);
+          }
+        }
+      }
+    }
+
+    function drawPackets() {
+      const rect = container.getBoundingClientRect();
+      ctx.clearRect(0, 0, rect.width, rect.height);
+
+      packets.forEach(p => {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.opacity);
+
+        // Draw packet container capsule
+        const w = 46;
+        const h = 24;
+        const x = p.x - w / 2;
+        const y = p.y - h / 2;
+        const r = 6;
+
+        // Shadow
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.12)';
+        ctx.shadowBlur = 6;
+        ctx.shadowOffsetY = 2;
+
+        // Capsule background
+        ctx.beginPath();
+        ctx.roundRect(x, y, w, h, r);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+
+        // Capsule border
+        ctx.shadowColor = 'transparent';
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Packet ID text
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 10px monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        let label = `#${p.id}`;
+        if (p.stage === 3) label = '✕ DROP';
+        else if (p.stage === 4) label = '✓ ACK';
+        
+        ctx.fillText(label, p.x, p.y);
+
+        ctx.restore();
+      });
+    }
+
+    function updateDeliveryRate() {
+      if (sentCount === 0) {
+        document.getElementById('statDeliveryRate').textContent = '100';
+        return;
+      }
+      const rate = ((receivedCount / sentCount) * 100).toFixed(0);
+      document.getElementById('statDeliveryRate').textContent = rate;
+    }
+
+    function finishSimulation() {
+      isSimRunning = false;
+      isSimPaused = false;
+      startBtn.disabled = false;
+      pauseBtn.disabled = true;
+      startBtnLabel.textContent = "Run Again";
+      sliderCount.disabled = false;
+      sliderDelay.disabled = false;
+      sliderLoss.disabled = false;
+
+      logEvent(`Simulation complete! Sent: ${sentCount}, Delivered: ${receivedCount}, Dropped: ${droppedCount}.`, 'success');
+    }
+  </script>
+</body>
+</html>

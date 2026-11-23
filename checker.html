@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connection Checker — NEXUS</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="brand-link">
+        <div class="brand-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">NEXUS</span>
+          <span class="brand-tag">Network Analyzer</span>
+        </div>
+      </a>
+      <ul class="nav-menu">
+        <li class="nav-item"><a href="index.html">Home</a></li>
+        <li class="nav-item"><a href="checker.html" class="active">Connection Checker</a></li>
+        <li class="nav-item"><a href="speedtest.html">Speed Checker</a></li>
+        <li class="nav-item"><a href="monitor.html">Latency Monitor</a></li>
+        <li class="nav-item"><a href="simulator.html">Packet Simulator</a></li>
+        <li class="nav-item"><a href="credits.html">Credits</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="page-header">
+      <div class="badge-tag">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+        Diagnostic Module
+      </div>
+      <h1 class="page-title">HTTP Connection Checker</h1>
+      <p class="page-subtitle">
+        Perform a live HTTP handshake to verify host accessibility, actual status codes, DNS resolution, and precise round-trip response time in milliseconds.
+      </p>
+    </div>
+
+    <!-- URL Input Card -->
+    <div class="card">
+      <form id="checkerForm" onsubmit="handleCheck(event)">
+        <div class="input-group">
+          <input 
+            type="text" 
+            id="urlInput" 
+            class="input-field" 
+            placeholder="Enter website URL (e.g. google.com, https://github.com)" 
+            value="google.com" 
+            required 
+            autocomplete="off"
+            spellcheck="false"
+          >
+          <button type="submit" id="checkBtn" class="btn btn-primary">
+            <span id="btnIcon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </span>
+            <span id="btnText">Check Website</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- Preset Quick Tests -->
+      <div class="presets-container">
+        <span class="presets-label">Quick Presets:</span>
+        <button type="button" class="preset-chip" onclick="setPreset('google.com')">google.com</button>
+        <button type="button" class="preset-chip" onclick="setPreset('github.com')">github.com</button>
+        <button type="button" class="preset-chip" onclick="setPreset('wikipedia.org')">wikipedia.org</button>
+        <button type="button" class="preset-chip" onclick="setPreset('httpstat.us/404')">httpstat.us/404</button>
+        <button type="button" class="preset-chip" onclick="setPreset('invalid-domain-nexus-test.xyz')">invalid-domain.xyz (Fail test)</button>
+      </div>
+    </div>
+
+    <!-- Results Container (Initially hidden or shows empty state) -->
+    <div id="resultsArea" style="margin-top: 1.5rem; display: none;">
+      
+      <!-- Primary Status Card -->
+      <div class="card" id="statusCard">
+        <div class="card-header">
+          <div class="card-title">
+            <span id="statusIndicator"></span>
+            <span id="resultUrl" style="font-family: var(--font-mono); font-size: 0.95rem;"></span>
+          </div>
+          <span id="statusBadge" class="status-pill"></span>
+        </div>
+
+        <!-- Metrics Grid -->
+        <div class="metrics-grid">
+          
+          <div class="stat-card">
+            <div class="stat-label">Reachability</div>
+            <div class="stat-value" id="valReachable" style="font-size: 1.35rem;">—</div>
+            <div class="stat-sub" id="subReachable">Socket connection test</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-label">HTTP Status Code</div>
+            <div class="stat-value" id="valStatusCode">—</div>
+            <div class="stat-sub" id="subStatusText">Response status</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-label">HTTP Response Time</div>
+            <div class="stat-value">
+              <span id="valResponseTime">—</span>
+              <span class="stat-unit">ms</span>
+            </div>
+            <div class="stat-sub" id="subLatencyRating">Application round-trip</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-label">Resolved IP Address</div>
+            <div class="stat-value" id="valIpAddress" style="font-size: 1.05rem;">—</div>
+            <div class="stat-sub">DNS A-Record lookup</div>
+          </div>
+
+        </div>
+
+        <!-- Detailed Breakdown Table -->
+        <div class="table-container" style="margin-top: 1rem;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Diagnostic Parameter</th>
+                <th>Measured Value</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Target Hostname</td>
+                <td id="detailHostname">—</td>
+                <td>Domain parsed from target URI</td>
+              </tr>
+              <tr>
+                <td>HTTP Server Header</td>
+                <td id="detailServer">—</td>
+                <td>Web server software reported in response</td>
+              </tr>
+              <tr>
+                <td>Content-Type</td>
+                <td id="detailContentType">—</td>
+                <td>MIME type of returned entity payload</td>
+              </tr>
+              <tr>
+                <td>Measurement Timestamp</td>
+                <td id="detailTimestamp">—</td>
+                <td>Local system clock time at request completion</td>
+              </tr>
+              <tr id="errorRow" style="display: none;">
+                <td style="color: var(--error);">Error Details</td>
+                <td id="detailError" colspan="2" style="color: var(--error);">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Educational Context Box -->
+    <div class="academic-box">
+      <div class="academic-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        Data Communications Concept: HTTP Round-Trip Time vs Host Reachability
+      </div>
+      <div class="academic-desc">
+        When an HTTP client initiates a request, it performs DNS address resolution (mapping hostname to IP), completes a 3-way TCP handshake (SYN, SYN-ACK, ACK), executes TLS cryptographic negotiation (for HTTPS), and sends an HTTP GET header. The response time measured here encompasses the full application-layer round-trip time (RTT). A website returning HTTP 404 or 403 is still marked <strong>Reachable</strong> because the target web server actively received and responded to the packet.
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-left">
+        <span class="footer-brand">NEXUS — Smart Network Performance Analyzer</span>
+        <span class="footer-copy">Pure Python & Vanilla JS implementation. Actual live measurements.</span>
+      </div>
+      <div class="footer-right">
+        <div>Developers: Sarthak Gawande • Sarvadnya Umalkar • Lokesh Dhakad</div>
+        <div style="color: var(--text-muted); font-size: 0.75rem;">Data Communications & Computer Networks</div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Script -->
+  <script>
+    function setPreset(url) {
+      document.getElementById('urlInput').value = url;
+      handleCheck();
+    }
+
+    async function handleCheck(e) {
+      if (e) e.preventDefault();
+
+      const urlInput = document.getElementById('urlInput');
+      const checkBtn = document.getElementById('checkBtn');
+      const btnText = document.getElementById('btnText');
+      const btnIcon = document.getElementById('btnIcon');
+      const resultsArea = document.getElementById('resultsArea');
+
+      let url = urlInput.value.trim();
+      if (!url) return;
+
+      // Disable button and show spinner
+      checkBtn.disabled = true;
+      btnText.textContent = "Querying Host...";
+      btnIcon.innerHTML = `
+        <svg class="animate-pulse" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+      `;
+
+      try {
+        const response = await fetch(`/api/check?url=${encodeURIComponent(url)}`);
+        const data = await response.json();
+
+        // Render Results
+        resultsArea.style.display = 'block';
+        document.getElementById('resultUrl').textContent = data.url;
+
+        const statusBadge = document.getElementById('statusBadge');
+        const valReachable = document.getElementById('valReachable');
+        const subReachable = document.getElementById('subReachable');
+        const valStatusCode = document.getElementById('valStatusCode');
+        const subStatusText = document.getElementById('subStatusText');
+        const valResponseTime = document.getElementById('valResponseTime');
+        const subLatencyRating = document.getElementById('subLatencyRating');
+        const valIpAddress = document.getElementById('valIpAddress');
+        const detailHostname = document.getElementById('detailHostname');
+        const detailServer = document.getElementById('detailServer');
+        const detailContentType = document.getElementById('detailContentType');
+        const detailTimestamp = document.getElementById('detailTimestamp');
+        const errorRow = document.getElementById('errorRow');
+        const detailError = document.getElementById('detailError');
+
+        if (data.reachable) {
+          statusBadge.className = 'status-pill success';
+          statusBadge.innerHTML = '<span class="status-dot"></span> REACHABLE';
+          valReachable.textContent = 'Reachable';
+          valReachable.style.color = 'var(--success)';
+          subReachable.textContent = 'Server accepted connection';
+
+          valStatusCode.textContent = data.status_code;
+          valStatusCode.style.color = data.status_code < 400 ? 'var(--success)' : 'var(--warning)';
+          subStatusText.textContent = data.status_text || 'HTTP OK';
+
+          valResponseTime.textContent = data.response_time_ms.toFixed(1);
+          if (data.response_time_ms < 200) {
+            subLatencyRating.textContent = 'Optimal latency (< 200ms)';
+          } else if (data.response_time_ms < 600) {
+            subLatencyRating.textContent = 'Moderate latency';
+          } else {
+            subLatencyRating.textContent = 'High latency (> 600ms)';
+          }
+
+          errorRow.style.display = 'none';
+        } else {
+          statusBadge.className = 'status-pill error';
+          statusBadge.innerHTML = '<span class="status-dot"></span> UNREACHABLE';
+          valReachable.textContent = 'Unreachable';
+          valReachable.style.color = 'var(--error)';
+          subReachable.textContent = 'Target host could not be reached';
+
+          valStatusCode.textContent = '000';
+          valStatusCode.style.color = 'var(--error)';
+          subStatusText.textContent = 'Connection Failed';
+
+          valResponseTime.textContent = data.response_time_ms.toFixed(1);
+          subLatencyRating.textContent = 'Request timed out or dropped';
+
+          errorRow.style.display = 'table-row';
+          detailError.textContent = data.error || 'Host refused connection or domain resolution failed';
+        }
+
+        valIpAddress.textContent = data.ip_address || 'Unknown';
+        detailHostname.textContent = data.hostname || '—';
+        detailServer.textContent = (data.headers && data.headers.server) || 'Not Disclosed';
+        detailContentType.textContent = (data.headers && data.headers.content_type) || 'N/A';
+        detailTimestamp.textContent = data.timestamp || new Date().toLocaleTimeString();
+
+      } catch (err) {
+        alert("Network communication error with local NEXUS backend: " + err.message);
+      } finally {
+        checkBtn.disabled = false;
+        btnText.textContent = "Check Website";
+        btnIcon.innerHTML = `
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        `;
+      }
+    }
+  </script>
+</body>
+</html>

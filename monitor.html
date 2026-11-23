@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Latency Monitor — NEXUS</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="brand-link">
+        <div class="brand-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">NEXUS</span>
+          <span class="brand-tag">Network Analyzer</span>
+        </div>
+      </a>
+      <ul class="nav-menu">
+        <li class="nav-item"><a href="index.html">Home</a></li>
+        <li class="nav-item"><a href="checker.html">Connection Checker</a></li>
+        <li class="nav-item"><a href="speedtest.html">Speed Checker</a></li>
+        <li class="nav-item"><a href="monitor.html" class="active">Latency Monitor</a></li>
+        <li class="nav-item"><a href="simulator.html">Packet Simulator</a></li>
+        <li class="nav-item"><a href="credits.html">Credits</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="page-header">
+      <div class="badge-tag">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+        </svg>
+        Continuous Telemetry
+      </div>
+      <h1 class="page-title">Live Latency Monitor</h1>
+      <p class="page-subtitle">
+        Repeatedly measures HTTP response time at a safe 2.0-second interval. Computes real-time statistics (Current, Min, Max, Average) and renders an active time-series waveform graph.
+      </p>
+    </div>
+
+    <!-- Control & Target Card -->
+    <div class="card">
+      <div class="input-group">
+        <input 
+          type="text" 
+          id="monitorUrl" 
+          class="input-field" 
+          placeholder="Enter website URL (e.g. google.com, github.com)" 
+          value="google.com" 
+          autocomplete="off"
+          spellcheck="false"
+        >
+        <button type="button" id="startBtn" class="btn btn-primary" onclick="startMonitoring()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          Start Monitoring
+        </button>
+        <button type="button" id="stopBtn" class="btn btn-secondary" onclick="stopMonitoring()" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="6" y="4" width="4" height="16"></rect>
+            <rect x="14" y="4" width="4" height="16"></rect>
+          </svg>
+          Stop
+        </button>
+        <button type="button" id="resetBtn" class="btn btn-outline" onclick="resetMonitoring()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+          </svg>
+          Reset
+        </button>
+      </div>
+
+      <!-- Presets -->
+      <div class="presets-container">
+        <span class="presets-label">Target Presets:</span>
+        <button type="button" class="preset-chip" onclick="setMonitorPreset('google.com')">google.com</button>
+        <button type="button" class="preset-chip" onclick="setMonitorPreset('github.com')">github.com</button>
+        <button type="button" class="preset-chip" onclick="setMonitorPreset('wikipedia.org')">wikipedia.org</button>
+        <button type="button" class="preset-chip" onclick="setMonitorPreset('cloudflare.com')">cloudflare.com</button>
+      </div>
+    </div>
+
+    <!-- Live Statistics Display -->
+    <div class="metrics-grid">
+      <div class="stat-card">
+        <div class="stat-label">Live HTTP Response Time</div>
+        <div class="stat-value">
+          <span id="statLive">—</span>
+          <span class="stat-unit">ms</span>
+        </div>
+        <div class="stat-sub" id="statStatus">Status: Idle</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">Minimum Latency</div>
+        <div class="stat-value">
+          <span id="statMin">—</span>
+          <span class="stat-unit">ms</span>
+        </div>
+        <div class="stat-sub">Lowest recorded round-trip</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">Maximum Latency</div>
+        <div class="stat-value">
+          <span id="statMax">—</span>
+          <span class="stat-unit">ms</span>
+        </div>
+        <div class="stat-sub">Peak recorded round-trip</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">Average Latency</div>
+        <div class="stat-value">
+          <span id="statAvg">—</span>
+          <span class="stat-unit">ms</span>
+        </div>
+        <div class="stat-sub"><span id="statSamples">0</span> samples collected</div>
+      </div>
+    </div>
+
+    <!-- Graph Card -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+      <div class="card-header">
+        <div class="card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+          Live Response Time Waveform (ms)
+        </div>
+        <span class="badge-tag" id="liveBadge" style="margin-bottom: 0;">2.0s Interval</span>
+      </div>
+
+      <!-- Canvas for Graph -->
+      <div class="chart-wrapper">
+        <canvas id="latencyCanvas"></canvas>
+      </div>
+    </div>
+
+    <!-- Live Sample Log -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="8" y1="6" x2="21" y2="6"></line>
+            <line x1="8" y1="12" x2="21" y2="12"></line>
+            <line x1="8" y1="18" x2="21" y2="18"></line>
+            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+          </svg>
+          Recent Samples Log
+        </div>
+        <span style="font-size: 0.8rem; color: var(--text-muted);">Max 15 recent samples</span>
+      </div>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th># Sample</th>
+              <th>Time</th>
+              <th>Target URL</th>
+              <th>HTTP Status</th>
+              <th>Response Time</th>
+              <th>Delta from Avg</th>
+            </tr>
+          </thead>
+          <tbody id="samplesTableBody">
+            <tr>
+              <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+                No samples recorded. Enter a URL and click "Start Monitoring".
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Educational Context Box -->
+    <div class="academic-box">
+      <div class="academic-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        Data Communications Principle: Application-Layer Response Time vs Network Ping
+      </div>
+      <div class="academic-desc">
+        Traditional network <code>ping</code> utilizes ICMP Echo Request / Echo Reply messages operating strictly at the Network Layer (OSI Layer 3). In contrast, <strong>HTTP Response Time</strong> measures the total time required for the TCP 3-way handshake, TLS negotiation, server socket processing, web application queueing, and returning the HTTP response headers. This metric directly mirrors real-world web application performance experienced by end users.
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-left">
+        <span class="footer-brand">NEXUS — Smart Network Performance Analyzer</span>
+        <span class="footer-copy">Pure Python & Vanilla JS implementation. Actual live measurements.</span>
+      </div>
+      <div class="footer-right">
+        <div>Developers: Sarthak Gawande • Sarvadnya Umalkar • Lokesh Dhakad</div>
+        <div style="color: var(--text-muted); font-size: 0.75rem;">Data Communications & Computer Networks</div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Script -->
+  <script>
+    let monitorInterval = null;
+    let isRunning = false;
+    let samples = []; // Array of { id, time, url, status, rtt }
+    const MAX_CHART_POINTS = 25;
+    const POLLING_INTERVAL_MS = 2000; // Safe 2-second interval
+
+    // Canvas setup
+    const canvas = document.getElementById('latencyCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.resetTransform();
+      ctx.scale(dpr, dpr);
+      drawChart();
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    function setMonitorPreset(url) {
+      document.getElementById('monitorUrl').value = url;
+      if (isRunning) {
+        stopMonitoring();
+        startMonitoring();
+      }
+    }
+
+    function startMonitoring() {
+      const url = document.getElementById('monitorUrl').value.trim();
+      if (!url) {
+        alert("Please specify a target website URL.");
+        return;
+      }
+
+      isRunning = true;
+      document.getElementById('startBtn').disabled = true;
+      document.getElementById('stopBtn').disabled = false;
+      document.getElementById('monitorUrl').disabled = true;
+      document.getElementById('statStatus').textContent = "Status: Monitoring every 2.0s";
+      document.getElementById('statStatus').style.color = "var(--dusty-blue-dark)";
+      document.getElementById('liveBadge').className = "badge-tag lavender";
+      document.getElementById('liveBadge').textContent = "Active Telemetry (2s)";
+
+      // Take immediate sample then schedule every 2s
+      sampleLatency();
+      monitorInterval = setInterval(sampleLatency, POLLING_INTERVAL_MS);
+    }
+
+    function stopMonitoring() {
+      if (!isRunning) return;
+      isRunning = false;
+      clearInterval(monitorInterval);
+      monitorInterval = null;
+
+      document.getElementById('startBtn').disabled = false;
+      document.getElementById('stopBtn').disabled = true;
+      document.getElementById('monitorUrl').disabled = false;
+      document.getElementById('statStatus').textContent = "Status: Paused";
+      document.getElementById('statStatus').style.color = "var(--text-muted)";
+      document.getElementById('liveBadge').className = "badge-tag";
+      document.getElementById('liveBadge').textContent = "Monitoring Paused";
+    }
+
+    function resetMonitoring() {
+      stopMonitoring();
+      samples = [];
+      document.getElementById('statLive').textContent = "—";
+      document.getElementById('statMin').textContent = "—";
+      document.getElementById('statMax').textContent = "—";
+      document.getElementById('statAvg').textContent = "—";
+      document.getElementById('statSamples').textContent = "0";
+      document.getElementById('statStatus').textContent = "Status: Idle";
+      document.getElementById('samplesTableBody').innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+            No samples recorded. Enter a URL and click "Start Monitoring".
+          </td>
+        </tr>
+      `;
+      drawChart();
+    }
+
+    async function sampleLatency() {
+      const url = document.getElementById('monitorUrl').value.trim();
+      if (!url) return;
+
+      try {
+        const res = await fetch(`/api/check?url=${encodeURIComponent(url)}`);
+        const data = await responseToJson(res);
+        const rtt = data.response_time_ms;
+        const timeStr = data.timestamp || new Date().toLocaleTimeString();
+        const statusCode = data.status_code || (data.reachable ? 200 : 0);
+
+        const sampleObj = {
+          id: samples.length + 1,
+          time: timeStr,
+          url: data.url,
+          status: statusCode,
+          reachable: data.reachable,
+          rtt: rtt
+        };
+
+        samples.push(sampleObj);
+        updateStatistics();
+        renderLogTable();
+        drawChart();
+
+      } catch (err) {
+        console.error("Sampling error:", err);
+      }
+    }
+
+    async function responseToJson(res) {
+      try {
+        return await res.json();
+      } catch (e) {
+        return { response_time_ms: 0, status_code: 0, reachable: false, timestamp: new Date().toLocaleTimeString(), url: "" };
+      }
+    }
+
+    function updateStatistics() {
+      if (samples.length === 0) return;
+
+      const rtts = samples.map(s => s.rtt);
+      const latest = rtts[rtts.length - 1];
+      const min = Math.min(...rtts);
+      const max = Math.max(...rtts);
+      const avg = rtts.reduce((a, b) => a + b, 0) / rtts.length;
+
+      document.getElementById('statLive').textContent = latest.toFixed(1);
+      document.getElementById('statMin').textContent = min.toFixed(1);
+      document.getElementById('statMax').textContent = max.toFixed(1);
+      document.getElementById('statAvg').textContent = avg.toFixed(1);
+      document.getElementById('statSamples').textContent = samples.length;
+    }
+
+    function renderLogTable() {
+      const tbody = document.getElementById('samplesTableBody');
+      const recent = samples.slice(-15).reverse();
+      const avg = samples.reduce((a, b) => a + b.rtt, 0) / samples.length;
+
+      let html = '';
+      recent.forEach(s => {
+        const diff = s.rtt - avg;
+        const diffStr = diff >= 0 ? `+${diff.toFixed(1)} ms` : `${diff.toFixed(1)} ms`;
+        const diffColor = diff <= 0 ? 'var(--success)' : 'var(--error)';
+        const statusBadge = s.reachable 
+          ? `<span style="color: var(--success); font-weight: 600;">${s.status} OK</span>` 
+          : `<span style="color: var(--error); font-weight: 600;">Failed</span>`;
+
+        html += `
+          <tr>
+            <td>#${s.id}</td>
+            <td>${s.time}</td>
+            <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${s.url}</td>
+            <td>${statusBadge}</td>
+            <td style="font-weight: 700;">${s.rtt.toFixed(1)} ms</td>
+            <td style="color: ${diffColor};">${diffStr}</td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    }
+
+    function drawChart() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+
+      ctx.clearRect(0, 0, width, height);
+
+      // Margins
+      const padLeft = 55;
+      const padRight = 30;
+      const padTop = 30;
+      const padBottom = 35;
+      const chartW = width - padLeft - padRight;
+      const chartH = height - padTop - padBottom;
+
+      if (chartW <= 0 || chartH <= 0) return;
+
+      // Draw background grid
+      ctx.strokeStyle = '#f0ede6';
+      ctx.lineWidth = 1;
+
+      const numGridY = 4;
+      for (let i = 0; i <= numGridY; i++) {
+        const y = padTop + (chartH / numGridY) * i;
+        ctx.beginPath();
+        ctx.moveTo(padLeft, y);
+        ctx.lineTo(width - padRight, y);
+        ctx.stroke();
+      }
+
+      if (samples.length === 0) {
+        ctx.fillStyle = '#8b909f';
+        ctx.font = '13px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Live waveform waiting for telemetry data...', width / 2, height / 2);
+        return;
+      }
+
+      // Recent window of points
+      const displaySamples = samples.slice(-MAX_CHART_POINTS);
+      const rtts = displaySamples.map(s => s.rtt);
+      let maxVal = Math.max(...rtts, 100);
+      let minVal = 0; // baseline 0ms
+      maxVal = Math.ceil(maxVal * 1.15); // headroom
+
+      // Y-Axis labels
+      ctx.fillStyle = '#8b909f';
+      ctx.font = '11px monospace';
+      ctx.textAlign = 'right';
+      for (let i = 0; i <= numGridY; i++) {
+        const val = maxVal - (maxVal / numGridY) * i;
+        const y = padTop + (chartH / numGridY) * i;
+        ctx.fillText(`${Math.round(val)} ms`, padLeft - 8, y + 3);
+      }
+
+      // Calculate coordinates
+      const points = displaySamples.map((s, index) => {
+        const x = displaySamples.length === 1 
+          ? padLeft + chartW / 2 
+          : padLeft + (chartW / (displaySamples.length - 1)) * index;
+        const ratio = (s.rtt - minVal) / (maxVal - minVal);
+        const y = padTop + chartH - (ratio * chartH);
+        return { x, y, rtt: s.rtt, id: s.id, time: s.time };
+      });
+
+      // Draw Average Line (dashed lavender)
+      const avg = displaySamples.reduce((a, b) => a + b.rtt, 0) / displaySamples.length;
+      const avgY = padTop + chartH - ((avg - minVal) / (maxVal - minVal) * chartH);
+
+      ctx.save();
+      ctx.setLineDash([4, 4]);
+      ctx.strokeStyle = '#b7a8d8';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(padLeft, avgY);
+      ctx.lineTo(width - padRight, avgY);
+      ctx.stroke();
+      ctx.restore();
+
+      // Avg label
+      ctx.fillStyle = '#7a6ba3';
+      ctx.font = '10px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText(`AVG: ${avg.toFixed(1)}ms`, width - padRight - 70, avgY - 5);
+
+      // Area fill under line
+      if (points.length > 1) {
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, padTop + chartH);
+        points.forEach(p => ctx.lineTo(p.x, p.y));
+        ctx.lineTo(points[points.length - 1].x, padTop + chartH);
+        ctx.closePath();
+        
+        const grad = ctx.createLinearGradient(0, padTop, 0, padTop + chartH);
+        grad.addColorStop(0, 'rgba(122, 107, 163, 0.20)');
+        grad.addColorStop(1, 'rgba(77, 107, 139, 0.02)');
+        ctx.fillStyle = grad;
+        ctx.fill();
+      }
+
+      // Stroke Line
+      ctx.beginPath();
+      ctx.strokeStyle = '#4d6b8b';
+      ctx.lineWidth = 2.2;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+
+      points.forEach((p, idx) => {
+        if (idx === 0) ctx.moveTo(p.x, p.y);
+        else ctx.lineTo(p.x, p.y);
+      });
+      ctx.stroke();
+
+      // Draw Points
+      points.forEach((p, idx) => {
+        const isLatest = idx === points.length - 1;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, isLatest ? 5 : 3.5, 0, Math.PI * 2);
+        ctx.fillStyle = isLatest ? '#7a6ba3' : '#ffffff';
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = isLatest ? '#4d6b8b' : '#4d6b8b';
+        ctx.stroke();
+
+        // Latest point value tag
+        if (isLatest) {
+          ctx.fillStyle = '#242730';
+          ctx.font = 'bold 11px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(`${p.rtt.toFixed(1)}ms`, p.x, p.y - 10);
+        }
+      });
+    }
+
+    // Initial canvas setup
+    window.addEventListener('DOMContentLoaded', () => {
+      resizeCanvas();
+    });
+  </script>
+</body>
+</html>
